@@ -24,14 +24,14 @@ vmax_d=255
 
 phantom_range = maximum(phantom) - minimum(phantom)
 phantom = (phantom .- minimum(phantom)) ./ phantom_range 
-phantom = vmax_d .* phantom
+#phantom = vmax_d .* phantom
 
 #set seed for same results
 Random.seed!(123);
 
 #Add noise 
 mean_e = 0
-sigma_e = 0.05*maximum(phantom) #make sure this is right
+sigma_e = std(phantom) #make sure this is right
 e = rand(Normal(mean_e, sigma_e), size(phantom));
 phantom_noise = Float32.(phantom + e);
 
@@ -58,7 +58,7 @@ maxiter = 100
 losses = zeros(maxiter);
 
 #opt = Descent(0.00000001) #now only update weights #change to map in cost function
-opt = ADAM(0.1);
+opt = ADAM(1f-4);
 
 @time begin
 for i in 1:maxiter
@@ -67,7 +67,7 @@ for i in 1:maxiter
         Float32(1/(2*sigma_e^2.0))*(sum(G(z) - y).^2.0f0) #mle
        
     end
-    grads = back(1.0f0)
+    grads = back(1f0)
 
     for p in w
         update!(opt, p, grads[p])
@@ -80,5 +80,13 @@ for i in 1:maxiter
 end
 end
 
-imshow(G(z)[:,:,1,1]-y)
-imshow(y)
+figure();
+imshow(G(z)[:,:,1,1]);title("predicted image");
+figure();
+imshow(G(z)[:,:,1,1]-y);title("predicted error");
+figure();
+imshow(y);title("noisy image");
+figure();imshow(phantom);title("clean image");
+figure();imshow(phantom-y);title("noise");
+
+figure();plot(losses);title("loss history");
